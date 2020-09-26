@@ -1,0 +1,730 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    max-width: 99%;
+    height: auto;
+    width: auto\9;
+    margin: auto;
+    text-align: left;
+    font-weight: 200;
+	font-family: 'Roboto', sans-serif;
+    color: #121212;
+  }
+
+  img {
+  margin: auto;
+  display: block;
+  max-width: 99%;
+  height: auto;
+  width: auto\9;
+}
+
+code {
+  font-family: Consolas,"courier new";
+  color: crimson;
+  background-color: #eee;
+  padding: 2px;
+
+}
+
+
+
+  h1, h2, h3, h4 {
+    font-family: 'Playfair Display', serif ;
+  }
+  p.medium {line-height : 1.75;}
+  ol{display: table; margin: 0 auto;}
+  p.codeblock{text-indent: 5em;}
+  table {border-collapse: collapse;}
+</style>
+
+<title>Filters and Frequencies</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Playfair+Display|Roboto&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+<body>
+
+<h1 align="middle">Fun with Filters and Frequencies</h1>
+<h2 align="middle">CS 194-26: Intro to Computer Vision and Computational Photography</h2>
+<h2 align="middle">Gregory Du, CS194-26-aec</h2>
+<br>
+
+<h2 align="Center">Overview</h2>
+<p class = "medium">
+This project explores the way in which we can process images using various filters. We examine the variety
+of frequencies found in images, and see examples of how considering subsets can lead to some really interesting
+results.
+</p>
+
+<br>
+<h2 align="Center">Filters</h2>
+
+<h3 align="Center">1.1: Finite Difference Operators</h3>
+<p class="medium">
+The computation for the gradient magnitude image is actually quite simple. First we convolve the image with
+the finite difference operator in the x dimension, <code>[1, -1]</code>, then we convolve the image with
+the finite difference operator in the y dimension, <code>[[1], [-1]]</code>. With these partial derivative
+intermediate steps (which we can call <code>p_dx</code> and <code>p_dy</code> respectively), we simply need 
+to utilize the distance formula on these two images on a per-pixel basis, that is to say, the gradient 
+magnitude image can be computed as follows: <code>np.sqrt(p_dx**2 + p_dy**2)</code>. 
+</p>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="./images/1_1/cameraman_pdx.png" align="middle" width="400"/>
+          <figcaption align="center">Camera Man: Partial Derivative w.r.t x</figcaption>
+        </td>
+        <td>
+          <img src="./images/1_1/cameraman_pdy.png" align="middle" width="400"/>
+          <figcaption align="center">Camera Man: Partial Derivative w.r.t y</figcaption>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <img src="./images/1_1/cameraman_gm.png" align="middle" width="400"/>
+            <figcaption align="center">Camera Man: Gradient Magnitude</figcaption>
+        </td>
+        <td>
+          <img src="./images/1_1/cameraman_gm_binarized.png" align="middle" width="400"/>
+          <figcaption align="center">Camera Man: Gradient Magnitude Binarized</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+
+<h3 align="Center">1.2: Derivative of Gaussian Filter</h3>
+<p class="medium">
+By first applying the gaussian filter, we can see that in fact, we've removed a lot of the graininess from 
+our original gradient magnitude image. By blurring the image first, we've essentially prevented outlier
+bright points from passing our derivative filter and threshold checks, since they now blend in much more
+with their surroundings, considering they aren't actually edges, and thus the intensities of the pixels
+that surround them are less likely to be different as they would be for an edge. We can also see that the 
+edges are not quite as sharp, which stands to reason as well, simply because we've blurred the edges, thus
+by blending edge pixels with the pixels around them, we've increased the border width of pixels our derivative
+filter would pick up as an edge.
+</p>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="./images/1_2/cameraman_pdx.png" align="middle" width="400"/>
+          <figcaption align="center">Camera Man: Partial Derivative w.r.t x</figcaption>
+        </td>
+        <td>
+          <img src="./images/1_2/cameraman_pdy.png" align="middle" width="400"/>
+          <figcaption align="center">Camera Man: Partial Derivative w.r.t y</figcaption>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <img src="./images/1_2/cameraman_gm.png" align="middle" width="400"/>
+            <figcaption align="center">Camera Man: Gradient Magnitude</figcaption>
+        </td>
+        <td>
+          <img src="./images/1_2/cameraman_gm_binarized.png" align="middle" width="400"/>
+          <figcaption align="center">Camera Man: Gradient Magnitude Binarized</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<p class="medium">
+For some odd reason though, precomposing my gaussian and discrete difference filters yielded some odd, and blatantly incorrect results.
+<code>convolve2d</code> is supposed to be 2D convolution which is commutative, however, 
+practically, the arguments are locked in order. I displayed my preconvolved filters below, and the final convolution.
+</p>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="./images/1_2/gaussian_dx.png" align="middle" width="400"/>
+          <figcaption align="center">Gaussian Preconvolved Dx</figcaption>
+        </td>
+        <td>
+          <img src="./images/1_2/gaussian_dy.png" align="middle" width="400"/>
+          <figcaption align="center">Gaussian Preconvolved Dy</figcaption>
+        </td>
+        <td>
+            <img src="./images/1_2/precomposed_gaussian.png" align="middle" width="400"/>
+            <figcaption align="center">Final Convolution</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<h3 align="Center">1.3: Image Straightening</h3>
+<p class="medium">
+We use a proposed rotation range from -5 to 5 degrees. This isn't a huge range, nor is it particularly granular
+and we assume that the initial image is not completely tilted beyond reason (this will result in some failure
+cases we will see below). The reasoning behind this choice is purely performance driven. We'd like to keep
+computation times down, so we've reduced the proposed range of rotations to check. Below from left to right,
+we will see the original image, the straightened image, as well as the angle histograms for the source and straightened
+image.
+</p>
+<br>
+<h3 align = "left">Facade</h3>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="./images/1_3/facade.jpg" align="middle" width="600"/>
+          <figcaption align="center">facade</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/1_3/facade_orig_hist.png" align="middle" width="600"/>
+            <figcaption align="center">facade original angle histogram</code></figcaption>
+          </td>
+        <td>
+          <img src="./images/1_3/facade_straightened.png" align="middle" width="600"/>
+          <figcaption align="center">facade straightened</figcaption>
+        </td>
+        <td>
+          <img src="./images/1_3/facade_hist.png" align="middle" width="600"/>
+          <figcaption align="center">facade straightened angle histogram</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<h3 align = "left">Drawn City</h3>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="./images/1_3/drawn_city.png" align="middle" width="600"/>
+          <figcaption align="center">drawn city</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/1_3/drawn_city_orig_hist.png" align="middle" width="600"/>
+            <figcaption align="center">drawn city original angle histogram</figcaption>
+          </td>
+        <td>
+          <img src="./images/1_3/drawn_city_straightened.png" align="middle" width="600"/>
+          <figcaption align="center">drawn city straightened</figcaption>
+        </td>
+        <td>
+          <img src="./images/1_3/drawn_city_hist.png" align="middle" width="600"/>
+          <figcaption align="center">drawn city straightened angle histogram</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<h3 align = "left">France</h3>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="./images/1_3/france.jpg" align="middle" width="600"/>
+          <figcaption align="center">france</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/1_3/france_orig_hist.png" align="middle" width="600"/>
+            <figcaption align="center">france original angle histogram</figcaption>
+          </td>
+        <td>
+          <img src="./images/1_3/france_straightened.jpg" align="middle" width="600"/>
+          <figcaption align="center">france straightened</figcaption>
+        </td>
+        <td>
+          <img src="./images/1_3/france_hist.png" align="middle" width="600"/>
+          <figcaption align="center">france straightened angle histogram</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<h3 align = "left">Flan</h3>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+          <img src="./images/1_3/flan.jpg" align="middle" width="600"/>
+          <figcaption align="center">flan</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/1_3/flan_orig_hist.png" align="middle" width="600"/>
+            <figcaption align="center">flan original angle histogram</figcaption>
+          </td>
+        <td>
+          <img src="./images/1_3/flan_straightened.jpg" align="middle" width="600"/>
+          <figcaption align="center">flan straightened</figcaption>
+        </td>
+        <td>
+          <img src="./images/1_3/flan_hist.png" align="middle" width="600"/>
+          <figcaption align="center">flan straightened angle histogram</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<p class="medium">
+In fact not all images were created equal, and thus image straightening does not work equally well on all images.
+It worked pretty decently well on the first three, although you will notice that these are all architectural, or
+city-scapes. The third image is of a flan, which although delicious looking, is not particularly amenable to
+image straightening. There are two major reasons. First the image was rotated 9 degrees, which is farther
+than the proposed range of rotations our algorithm will seek. More fundamentally however, this image has 
+a noticeable lack of straight lines. Based on the original image, it's almost completely impossible to tell
+that it was rotated at all, simply because there isn't really a well defined notion of what a straightened 
+circular dessert should even be. This will happen with organic objects pretty easily since there aren't a ton
+of lines for our algorithm to latch onto.
+</p>
+<br>
+<h2 align="Center">Frequencies</h2>
+<h3 align="Center">2.1: Image "Sharpening"</h3>
+<p class="medium">
+We've implemented the unsharp mask filter below, both naively, as well as through efficient filter pre-composition. I've included some
+examples of some images that are sharpened, however you may notice that the last image, isn't really sharper, it's 
+just a little brighter. This is a consequence of the pseudo-sharpening we're using. We're only augmenting the weight of high
+frequency signals in the original image, not a genuine sharpening of the image, so in a drawn image, where there isn't the blurry
+grain of traditional photographs, and the resolution is unbounded, the unsharp mask filter basically just brightens the image
+by additively increasing pixel brightness.
+</p>
+<br>
+<h3 align = "left">Taj Mahal</h3>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_1/taj.png" align="middle" width="600"/>
+            <figcaption align="center">Taj Mahal</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_1/taj_sharpened.png" align="middle" width="600"/>
+            <figcaption align="center">Taj Mahal: Sharpened Naively</code></figcaption>
+        </td>
+        <td>
+          <img src="./images/2_1/taj_sharpened_precomposed.png" align="middle" width="600"/>
+          <figcaption align="center">Taj Mahal: Sharpened Pre-composed</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<h3 align = "left">Cherry Blossoms</h3>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_1/cherry_blossoms.png" align="middle" width="600"/>
+            <figcaption align="center">Cherry Blossoms</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_1/cherry_blossoms_sharpened.png" align="middle" width="600"/>
+            <figcaption align="center">Cherry Blossoms: Sharpened Naively</code></figcaption>
+        </td>
+        <td>
+          <img src="./images/2_1/cherry_blossoms_sharpened_precomposed.png" align="middle" width="600"/>
+          <figcaption align="center">Cherry Blossoms: Sharpened Pre-composed</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<h3 align = "left">Woods</h3>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_1/woods.png" align="middle" width="600"/>
+            <figcaption align="center">Woods</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_1/woods_sharpened.png" align="middle" width="600"/>
+            <figcaption align="center">Woods: Sharpened Naively</code></figcaption>
+        </td>
+        <td>
+          <img src="./images/2_1/woods_sharpened_precomposed.png" align="middle" width="600"/>
+          <figcaption align="center">Woods: Sharpened Pre-composed</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<h3 align = "left">Drawn</h3>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_1/drawn.png" align="middle" width="600"/>
+            <figcaption align="center">Drawn</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_1/drawn_sharpened.png" align="middle" width="600"/>
+            <figcaption align="center">Drawn: Sharpened Naively</code></figcaption>
+        </td>
+        <td>
+          <img src="./images/2_1/drawn_sharpened_precomposed.png" align="middle" width="600"/>
+          <figcaption align="center">Drawn: Sharpened Pre-composed</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<h3 align="Center">2.1: Hybrid Images</h3>
+<p class="medium">
+By artificially lerping between select frequencies from two different images, we can generate hybrids, images that
+will transform as a function of viewing distance. 
+</p>
+<br>
+<p class="medium">Let's take a look at our original two images, and their Fourier analyses:</p>
+<br>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_2/eiffel_tower_grey.png" align="middle" width="400"/>
+            <figcaption align="center">Eiffel Tower</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_2/eiffel_fourier.png" align="middle" width="400"/>
+            <figcaption align="center">Eiffel Tower: Fourier Analysis</code></figcaption>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <img src="./images/2_2/washington_monument_grey.png" align="middle" width="400"/>
+          <figcaption align="center">Washington Monument</figcaption>
+        </td>
+        <td>
+            <img src="./images/2_2/washington_monument_fourier.png" align="middle" width="400"/>
+            <figcaption align="center">Washington Monument: Fourier Analysis</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<p class = "medium">Now what happens if we high pass filter the Eiffel Tower, and low pass filter the Washington Monument? Let's take a look
+at their Fourier Analyses now:</p>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_2/eiffel_fourier_filtered.png" align="middle" width="400"/>
+            <figcaption align="center">Eiffel Tower: High Pass Filtered</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_2/washington_monument_fourier_filtered.png" align="middle" width="400"/>
+            <figcaption align="center">Washington Monument: Low Pass Filtered</code></figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<p class="medium">Let's now average the filtered versions of the Eiffel Tower and Washington Monument to get the Eiffel Monument!</p>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_2/eiffel_monument.png" align="middle" width="400"/>
+            <figcaption align="center">Eiffel Monument</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_2/eiffel_monument_fourier.png" align="middle" width="400"/>
+            <figcaption align="center">Eiffel Monument: Fourier Analysis</code></figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<p class="medium">Here are two more cool hybrids that we generated. You may recognize the movie stars from Roman Holiday:</p>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_2/DerekPicture.jpg" align="middle" width="400"/>
+            <figcaption align="center">Derek</figcaption>
+        </td>
+        <td>
+            <img src="./images/2_2/nutmeg.jpg" align="middle" width="400"/>
+            <figcaption align="center">Nutmeg</figcaption>
+        </td>
+        <td>
+            <img src="./images/2_2/derek_nutmeg.png" align="middle" width="400"/>
+            <figcaption align="center">Derek & Nutmeg</figcaption>
+        </td>
+      </tr>
+      <tr>
+        <td>
+            <img src="./images/2_2/audrey.jpg" align="middle" width="400"/>
+            <figcaption align="center">Audrey Hepburn</figcaption>
+        </td>
+        <td>
+            <img src="./images/2_2/gregory.jpg" align="middle" width="400"/>
+            <figcaption align="center">Gregory Peck</figcaption>
+        </td>
+        <td>
+            <img src="./images/2_2/roman_holiday.png" align="middle" width="400"/>
+            <figcaption align="center">Roman Holiday</figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<p class="medium">
+This doesn't mean you should just go around making hybrid images of random source subjects though, if they don't align naturally,
+they hybrid photo won't be that good. Take a look at this pumpkin-penguin for example. How would you even go about aligning this?
+It's not that the effect doesn't work, it's just that the alignment isn't really meaningful. Perhaps another day for the punguin.
+</p>
+<div align = "middle">
+    <table style="width=100%">
+        <tr>
+            <td>
+                <img src="./images/2_2/penguin.jpg" align="middle" width="400"/>
+                <figcaption align="center">Penguin</figcaption>
+            </td>
+            <td>
+                <img src="./images/2_2/pumpkin.jpg" align="middle" width="400"/>
+                <figcaption align="center">Pumpkin</figcaption>
+            </td>
+            <td>
+                <img src="./images/2_2/punguin.png" align="middle" width="400"/>
+                <figcaption align="center">Punguin</figcaption>
+            </td>
+          </tr>
+    </table>
+</div>
+<br>
+<h3 align="Center">2.3: Gaussian and Laplacian Pyramids</h3>
+<p class="medium">
+Let's take a look at some Gaussian and Laplacian stacks, first applied to the Mona Lisa:
+</p>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_3/mona_lisa0.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/mona_lisa1.png" align="middle" width="300"/>
+        </td>
+        <td>
+          <img src="./images/2_3/mona_lisa2.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/mona_lisa3.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/mona_lisa4.png" align="middle" width="300"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+            <img src="./images/2_3/mona_lisa5.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/mona_lisa6.png" align="middle" width="300"/>
+        </td>
+        <td>
+          <img src="./images/2_3/mona_lisa7.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/mona_lisa8.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/mona_lisa9.png" align="middle" width="300"/>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<p class="medium">
+    Now let's see the Laplacian and Gaussian stack for the Eiffel Monument hybrid we generated above.
+</p>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_3/eiffel_monument0.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/eiffel_monument1.png" align="middle" width="300"/>
+        </td>
+        <td>
+          <img src="./images/2_3/eiffel_monument2.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/eiffel_monument3.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/eiffel_monument4.png" align="middle" width="300"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+            <img src="./images/2_3/eiffel_monument5.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/eiffel_monument6.png" align="middle" width="300"/>
+        </td>
+        <td>
+          <img src="./images/2_3/eiffel_monument7.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/eiffel_monument8.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_3/eiffel_monument9.png" align="middle" width="300"/>
+        </td>
+      </tr>
+    </table>
+</div>
+<h3 align="Center">2.4: Multiresolution Blending</h3>
+<p class="medium">
+By employing the Laplacian and Gaussian stacks we generated above, we can synthesize some really interesting 
+multiresolution blending images. Below, we'll display the two original images, as well as the result of applying
+multiresolution blending with standard masks.
+</p>
+<br>
+<h4>Orapple</h4>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_4/apple_grey.png" align="middle" width="400"/>
+            <figcaption align="center">Apple</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_4/orange_grey.png" align="middle" width="400"/>
+            <figcaption align="center">Orange</code></figcaption>
+        </td>
+        <td>
+          <img src="./images/2_4/orapple.png" align="middle" width="400"/>
+          <figcaption align="center">Orapple: Vertical Mask</code></figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<br>
+<h4>Puffguin</h4>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_4/penguin_grey.png" align="middle" width="400"/>
+            <figcaption align="center">Penguin</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_4/puffin_grey.png" align="middle" width="400"/>
+            <figcaption align="center">Puffin</code></figcaption>
+        </td>
+        <td>
+          <img src="./images/2_4/puffguin.png" align="middle" width="400"/>
+          <figcaption align="center">Puffguin: Horizontal Mask</code></figcaption>
+        </td>
+      </tr>
+    </table>
+</div>
+<p class="medium">
+For this next image, we generated a custom fit irregular mask for the cactus. Employing multiresolution
+blending allows us to spruce up a nice desert scene by adding a cactus.
+</p>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_4/desert_grey.png" align="middle" width="400"/>
+            <figcaption align="center">Desert</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_4/cactus_grey.png" align="middle" width="400"/>
+            <figcaption align="center">Cactus</code></figcaption>
+        </td>
+      </tr>
+      <tr>
+        <td>
+          <img src="./images/2_4/mask.jpg" align="middle" width="400"/>
+          <figcaption align="center">Desert Cactus Mask</code></figcaption>
+        </td>
+        <td>
+            <img src="./images/2_4/desert_cactus.png" align="middle" width="400"/>
+            <figcaption align="center">Desert Cactus: Custom Mask</code></figcaption>
+          </td>
+      </tr>
+    </table>
+</div>
+<p class="medium">
+    Here's the ladder of images that were lerped together:
+</p>
+<div align = "middle">
+    <table style="width=100%">
+      <tr>
+        <td>
+            <img src="./images/2_4/cactus0.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_4/cactus1.png" align="middle" width="300"/>
+        </td>
+        <td>
+          <img src="./images/2_4/cactus2.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_4/cactus3.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_4/cactus4.png" align="middle" width="300"/>
+        </td>
+      </tr>
+      <tr>
+        <td>
+            <img src="./images/2_4/desert0.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_4/desert1.png" align="middle" width="300"/>
+        </td>
+        <td>
+          <img src="./images/2_4/desert2.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_4/desert3.png" align="middle" width="300"/>
+        </td>
+        <td>
+            <img src="./images/2_4/desert4.png" align="middle" width="300"/>
+        </td>
+      </tr>
+    </table>
+</div>
+
+<h2 align="Center">Citations</h2>
+<ul>
+<li><a href="https://fonts.google.com/specimen/Playfair+Display?selection.family=Playfair+Display|Roboto" target=_blank>https://fonts.google.com/specimen/Playfair+Display?selection.family=Playfair+Display|Roboto</a></li>
+<li><a href="https://www.google.com/" target=_blank>https://www.google.com/</a></li>
+<li><a href="https://piazza.com/class/kdktix3lfbx30j?cid=88" target=_blank>https://piazza.com/class/kdktix3lfbx30j?cid=88</a></li>
+<li><a href="https://piazza.com/class/kdktix3lfbx30j?cid=86" target=_blank>https://piazza.com/class/kdktix3lfbx30j?cid=86</a></li>
+<li><a href="https://piazza.com/class/kdktix3lfbx30j?cid=87" target=_blank>https://piazza.com/class/kdktix3lfbx30j?cid=87</a></li>
+<li><a href="https://piazza.com/class/kdktix3lfbx30j?cid=89" target=_blank>https://piazza.com/class/kdktix3lfbx30j?cid=89</a></li>
+<li><a href="https://piazza.com/class/kdktix3lfbx30j?cid=90" target=_blank>https://piazza.com/class/kdktix3lfbx30j?cid=90</a></li>
+<li><a href="https://piazza.com/class/kdktix3lfbx30j?cid=91" target=_blank>https://piazza.com/class/kdktix3lfbx30j?cid=91</a></li>
+<li><a href="https://piazza.com/class/kdktix3lfbx30j?cid=92" target=_blank>https://piazza.com/class/kdktix3lfbx30j?cid=92</a></li>
+<li><a href="https://piazza.com/class/kdktix3lfbx30j?cid=99" target=_blank>https://piazza.com/class/kdktix3lfbx30j?cid=99</a></li>
+<li><a href="https://inst.eecs.berkeley.edu/~cs194-26/fa20/hw/proj2/" target=_blank>https://inst.eecs.berkeley.edu/~cs194-26/fa20/hw/proj2/</a></li>
+</ul>
+
+<ul>
+<li><a href="https://www.pinterest.com.mx/pin/442056519678350084/" target=_blank>https://www.pinterest.com.mx/pin/442056519678350084/</a></li>
+<li><a href="https://www.solosophie.com/pretty-french-towns-near-paris/" target=_blank>https://www.solosophie.com/pretty-french-towns-near-paris/</a></li>
+<li><a href="https://images.app.goo.gl/4ChwMnxMq3XYRKpJ9" target=_blank>https://images.app.goo.gl/4ChwMnxMq3XYRKpJ9</a></li>
+<li><a href="https://www.photographymad.com/pages/view/17-tips-for-taking-tack-sharp-photos" target=_blank>https://www.photographymad.com/pages/view/17-tips-for-taking-tack-sharp-photos</a></li>
+<li><a href="https://www.mayoclinichealthsystem.org/hometown-health/speaking-of-health/the-nature-of-grief-lessons-in-loss-and-life" target=_blank>https://www.mayoclinichealthsystem.org/hometown-health/speaking-of-health/the-nature-of-grief-lessons-in-loss-and-life</a></li>
+
+<li><a href="https://www.wallpaperflare.com/anime-your-name-building-city-kimi-no-na-wa-night-sky-wallpaper-scrwx" target=_blank>https://www.wallpaperflare.com/anime-your-name-building-city-kimi-no-na-wa-night-sky-wallpaper-scrwx</a></li>
+<li><a href="https://www.britannica.com/topic/Eiffel-Tower-Paris-France" target=_blank>https://www.britannica.com/topic/Eiffel-Tower-Paris-France</a></li>
+<li><a href="https://www.history.com/news/5-things-you-might-not-know-about-the-washington-monument" target=_blank>https://www.history.com/news/5-things-you-might-not-know-about-the-washington-monument</a></li>
+<li><a href="https://www.pinterest.com/pin/412501647092068376/" target=_blank>https://www.pinterest.com/pin/412501647092068376/</a></li>
+<li><a href="https://en.wikipedia.org/wiki/Audrey_Hepburn" target=_blank>https://en.wikipedia.org/wiki/Audrey_Hepburn</a></li>
+
+<li><a href="https://www.morrishospital.org/health-topics/to-stay-safe-on-snow-or-ice-walk-like-a-penguin/" target=_blank>https://www.morrishospital.org/health-topics/to-stay-safe-on-snow-or-ice-walk-like-a-penguin/</a></li>
+<li><a href="https://www.amazon.com/Pumpkin-Seeds-Cucurbita-Halloween-RDR/dp/B01N59THYN" target=_blank>https://www.amazon.com/Pumpkin-Seeds-Cucurbita-Halloween-RDR/dp/B01N59THYN</a></li>
+<li><a href="https://www.afar.com/magazine/these-adorable-photos-of-antarcticas-emperor-penguins-will-warm-your-heart" target=_blank>https://www.afar.com/magazine/these-adorable-photos-of-antarcticas-emperor-penguins-will-warm-your-heart</a></li>
+<li><a href="https://ebird.org/species/atlpuf" target=_blank>https://ebird.org/species/atlpuf</a></li>
+<li><a href="https://unsplash.com/s/photos/cactus-desert" target=_blank>https://unsplash.com/s/photos/cactus-desert</a></li>
+<li><a href="https://www.worldwildlife.org/habitats/deserts" target=_blank>https://www.worldwildlife.org/habitats/deserts</a></li>
+</ul>
+
+</body>
+</html>
